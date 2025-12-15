@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Medical Diagnostics Pro</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; background-color: #f0f2f5; }
+        .container { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { color: #1a237e; text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .upload-section { background: #e8eaf6; padding: 30px; border-radius: 10px; text-align: center; border: 2px dashed #3949ab; }
+        .results-container { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .image-card { background: white; padding: 10px; border-radius: 8px; border: 1px solid #eee; text-align: center; }
+        .image-card img { width: 100%; border-radius: 5px; }
+        .diagnosis-card { grid-column: 1 / -1; background: #fff3e0; padding: 25px; border-radius: 10px; border-left: 6px solid #ff9800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #3949ab; color: white; }
+        .prob-bar-container { background-color: #eee; width: 100%; border-radius: 5px; height: 10px; margin-top: 5px; }
+        
+        /* UPDATED CSS: Animation transition */
+        .prob-bar { 
+            height: 100%; 
+            border-radius: 5px; 
+            width: 0%; /* Start at 0 for animation */
+            background-color: var(--c); 
+            transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        button { background-color: #1a237e; color: white; padding: 12px 25px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #303f9f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏥 MedVision AI Pro</h1>
+        <p class="subtitle">Advanced Head CT/X-Ray Analysis with Differential Diagnosis</p>
+        
+        <div class="upload-section">
+            <form action="/predict" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" accept="image/*" required>
+                <br><br>
+                <button type="submit">Run Diagnostic Analysis</button>
+            </form>
+        </div>
+
+        {% if result %}
+        <div class="results-container">
+            <div class="image-card">
+                <div class="image-title">Enhanced Scan (CLAHE)</div>
+                <img src="data:image/png;base64,{{ result.original_img }}" alt="Original">
+            </div>
+            <div class="image-card">
+                <div class="image-title">AI Attention Heatmap</div>
+                <img src="data:image/png;base64,{{ result.heatmap_img }}" alt="Heatmap">
+            </div>
+            
+            <div class="diagnosis-card">
+                <h3>📋 Differential Diagnosis Report</h3>
+                
+                <p><strong>Primary Prediction:</strong> {{ result.best_name }} 
+                   (<span class="scramble-text" data-final="{{ result.best_prob }}">{{ result.best_prob }}</span>%)
+                </p>
+                
+                <p><strong>Clinical Context:</strong> {{ result.action }}</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Potential Condition</th>
+                            <th>Probability</th>
+                            <th>Severity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for diag in result.top_diagnosis %}
+                        <tr>
+                            <td>{{ diag.name }}</td>
+                            <td>
+                                <span class="scramble-text" data-final="{{ diag.prob }}">0.00</span>%
+                                
+                                <div class="prob-bar-container">
+                                    <div class="prob-bar" 
+                                         data-width="{{ diag.prob }}"
+                                         style="--c: {{ diag.color }};">
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ diag.severity }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Animate Numbers
+            const textElements = document.querySelectorAll('.scramble-text');
+            
+            textElements.forEach(el => {
+                const finalValue = parseFloat(el.getAttribute('data-final'));
+                let iteration = 0;
+                
+                // Fluctuate for 1.5 seconds (1500ms)
+                const interval = setInterval(() => {
+                    // Show random numbers
+                    el.innerText = (Math.random() * 100).toFixed(2);
+                    iteration++;
+                    
+                    if (iteration > 20) { 
+                        clearInterval(interval);
+                        el.innerText = finalValue.toFixed(2); // Settle on final value
+                    }
+                }, 50); // Speed of fluctuation
+            });
+
+            // 2. Animate Bars
+            const bars = document.querySelectorAll('.prob-bar');
+            bars.forEach(bar => {
+                const finalWidth = bar.getAttribute('data-width');
+                
+                // Add a small delay so they don't just jump instantly
+                setTimeout(() => {
+                    bar.style.width = finalWidth + "%";
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html>

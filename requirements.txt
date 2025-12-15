@@ -1,0 +1,12 @@
+flask
+torch
+torchvision
+opencv-python-headless
+albumentations
+pydicom
+pandas
+numpy
+grad-cam
+pillow
+
+pip install -r requirements.txt
